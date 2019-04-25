@@ -6,7 +6,7 @@ use bencher::Bencher;
 
 use recognizer::Router;
 
-use router::{NodeType, Node, find};
+use bravery_router::{NodeType, Node, find};
 use regex::Regex;
 
 fn recognizer(bench: &mut Bencher) {

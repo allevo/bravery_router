@@ -6,7 +6,7 @@ use bencher::Bencher;
 
 use recognizer::Router;
 
-use router::{NodeType, Node, find};
+use bravery_router::{NodeType, Node, find};
 
 fn recognizer(bench: &mut Bencher) {
     let mut router = Router::new();
