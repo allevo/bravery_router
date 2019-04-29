@@ -1,17 +1,14 @@
-extern crate regex;
-use std::fmt::Debug;
-
 use crate::node::{MAX_NEASTING_LEVEL_COUNT};
 pub use crate::node::{NodeType, Node};
 
 #[derive(Debug, PartialEq)]
-pub struct FindResult<'a, T: Debug + 'static> {
+pub struct FindResult<'a, T: PartialEq + 'static> {
     pub value: Option<&'static T>,
     params: Vec<&'a str>,
 }
 
 #[derive(Debug)]
-struct FindState<'a, T: Debug + 'static> {
+struct FindState<'a, T: PartialEq + 'static> {
     index: usize,
     steps: [usize; MAX_NEASTING_LEVEL_COUNT],
     step_number: usize,
@@ -20,7 +17,7 @@ struct FindState<'a, T: Debug + 'static> {
     param_number: usize,
 }
 
-impl<'a, T: Debug + 'static> FindState<'a, T> {
+impl<'a, T: PartialEq + 'static> FindState<'a, T> {
     fn inc (&mut self, n: usize) {
         self.index += n;
         self.steps[self.step_number] = n;
@@ -43,14 +40,13 @@ impl<'a, T: Debug + 'static> FindState<'a, T> {
     }
 }
 
-fn find_inner<'a, T: Debug> (node: &Node<T>, path: &'a str, path_bytes: &'a [u8], mut state: &mut FindState<'a, T>) -> bool {
-    trace!("find_inner: {:?}", state);
+fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a [u8], mut state: &mut FindState<'a, T>) -> bool {
     match &node.node_type {
         NodeType::Static(p) => {
-            if &path_bytes[state.index..] == *p {
+            if *p == &path_bytes[state.index..] {
                 if node.value.is_some() {
                     state.value = node.value;
-                    trace!("Exit with static! {} {}", std::str::from_utf8(&path_bytes[state.index..]).unwrap(), std::str::from_utf8(*p).unwrap());
+                    trace!("Exit with static! {} {}", std::str::from_utf8(&path_bytes[state.index..]).unwrap(), std::str::from_utf8(&*p).unwrap());
                     return true;
                 }
                 state.inc(p.len());
@@ -134,7 +130,7 @@ fn find_inner<'a, T: Debug> (node: &Node<T>, path: &'a str, path_bytes: &'a [u8]
     false
 }
 
-pub fn find<'a, T: Debug> (node: &Node<T>, path: &'a str) -> FindResult<'a, T> {
+pub fn find<'a, T: PartialEq> (node: &Node<T>, path: &'a str) -> FindResult<'a, T> {
     let mut find_state = FindState {
         index: 0,
         steps: [0; MAX_NEASTING_LEVEL_COUNT],
@@ -162,7 +158,7 @@ mod tests {
     #[test]
     fn get_root() {
         let root = Node {
-            node_type: NodeType::Static(b"/"),
+            node_type: NodeType::Static(vec![b'/']),
             value: Some(&0),
             static_children: Vec::new(),
             regex_children: Vec::new(),
@@ -181,23 +177,23 @@ mod tests {
     #[test]
     fn get_static_child() {
         let root = Node {
-            node_type: NodeType::Static(b"/"),
+            node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![
                 Node {
-                    node_type: NodeType::Static(b"a"),
+                    node_type: NodeType::Static(vec![b'a']),
                     value: Some(&1),
                     static_children: vec![],
                     regex_children: vec![],
                 },
                 Node {
-                    node_type: NodeType::Static(b"b"),
+                    node_type: NodeType::Static(vec![b'b']),
                     value: Some(&2),
                     static_children: vec![],
                     regex_children: vec![],
                 },
                 Node {
-                    node_type: NodeType::Static(b"c"),
+                    node_type: NodeType::Static(vec![b'c']),
                     value: Some(&3),
                     static_children: vec![],
                     regex_children: vec![],
@@ -228,7 +224,7 @@ mod tests {
     #[test]
     fn get_regex_child() {
         let root = Node {
-            node_type: NodeType::Static(b"/"),
+            node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: Vec::new(),
             regex_children: vec![
@@ -260,15 +256,15 @@ mod tests {
     #[test]
     fn get_static_fallback() {
         let root = Node {
-            node_type: NodeType::Static(b"/"),
+            node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![
                 Node {
-                    node_type: NodeType::Static(b"1"),
+                    node_type: NodeType::Static(vec![b'1']),
                     value: None,
                     static_children: vec![
                         Node {
-                            node_type: NodeType::Static(b"a"),
+                            node_type: NodeType::Static(vec![b'a']),
                             value: Some(&11),
                             static_children: vec![],
                             regex_children: vec![],
@@ -306,11 +302,11 @@ mod tests {
     #[test]
     fn get_regex_fallback() {
         let root = Node {
-            node_type: NodeType::Static(b"/"),
+            node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![
                 Node {
-                    node_type: NodeType::Static(b"1"),
+                    node_type: NodeType::Static(vec![b'1']),
                     value: None,
                     static_children: vec![],
                     regex_children: vec![
@@ -329,7 +325,7 @@ mod tests {
                     value: None,
                     static_children: vec![
                         Node {
-                            node_type: NodeType::Static(b"1"),
+                            node_type: NodeType::Static(vec![b'1']),
                             value: Some(&1),
                             static_children: vec![],
                             regex_children: vec![],

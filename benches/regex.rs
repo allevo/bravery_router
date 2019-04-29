@@ -23,7 +23,7 @@ fn recognizer(bench: &mut Bencher) {
 fn router(bench: &mut Bencher) {
     let comments = &"comments";
     let root = Node {
-        node_type: NodeType::Static(b"/posts/"),
+        node_type: NodeType::Static(b"/posts/".to_vec()),
         value: None,
         static_children: vec![],
         regex_children: vec![
@@ -32,7 +32,7 @@ fn router(bench: &mut Bencher) {
                 value: None,
                 static_children: vec![
                     Node {
-                        node_type: NodeType::Static(b"/comments"),
+                        node_type: NodeType::Static(b"/comments".to_vec()),
                         value: Some(comments),
                         static_children: vec![],
                         regex_children: vec![],

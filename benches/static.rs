@@ -25,21 +25,21 @@ fn router(bench: &mut Bencher) {
     let tom = &"Tom";
     let yehuda = &"Yehuda";
     let root = Node {
-        node_type: NodeType::Static(b"/"),
+        node_type: NodeType::Static(b"/".to_vec()),
         value: None,
         static_children: vec![
             Node {
-                node_type: NodeType::Static(b"t"),
+                node_type: NodeType::Static(b"t".to_vec()),
                 value: None,
                 static_children: vec![
                     Node {
-                        node_type: NodeType::Static(b"homas"),
+                        node_type: NodeType::Static(b"homas".to_vec()),
                         value: Some(thomas),
                         static_children: vec![],
                         regex_children: vec![],
                     },
                     Node {
-                        node_type: NodeType::Static(b"om"),
+                        node_type: NodeType::Static(b"om".to_vec()),
                         value: Some(tom),
                         static_children: vec![],
                         regex_children: vec![],
@@ -48,7 +48,7 @@ fn router(bench: &mut Bencher) {
                 regex_children: vec![],
             },
             Node {
-                node_type: NodeType::Static(b"wycats"),
+                node_type: NodeType::Static(b"wycats".to_vec()),
                 value: Some(yehuda),
                 static_children: vec![],
                 regex_children: vec![],
