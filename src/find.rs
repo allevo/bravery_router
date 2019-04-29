@@ -4,7 +4,7 @@ pub use crate::node::{NodeType, Node};
 #[derive(Debug, PartialEq)]
 pub struct FindResult<'a, T: PartialEq + 'static> {
     pub value: Option<&'static T>,
-    params: Vec<&'a str>,
+    pub params: Vec<&'a str>,
 }
 
 #[derive(Debug)]

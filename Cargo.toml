@@ -12,6 +12,10 @@ log = "0.4"
 bencher = "0.1.5"
 route-recognizer = "0.*"
 
+[[example]]
+name = "basic"
+test = true
+
 [[bench]]
 name = "static"
 harness = false

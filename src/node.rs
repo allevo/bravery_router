@@ -8,6 +8,15 @@ pub enum NodeType {
     Regex(Regex),
 }
 
+impl NodeType {
+    pub fn r#static(&self) -> Vec<u8> {
+        match self {
+            NodeType::Static(p) => p.clone(),
+            _ => panic!("Not static node type!"),
+        }
+    }
+}
+
 pub struct Node<T: PartialEq + 'static> {
     pub node_type: NodeType,
     pub value: Option<&'static T>,
