@@ -7,6 +7,8 @@ edition = "2018"
 [dependencies]
 regex = "1"
 log = "0.4"
+env_logger = "0.6"
+lazy_static = "1"
 
 [dev-dependencies]
 bencher = "0.1.5"
@@ -22,4 +24,8 @@ harness = false
 
 [[bench]]
 name = "regex"
+harness = false
+
+[[bench]]
+name = "wildcard"
 harness = false

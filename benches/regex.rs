@@ -6,8 +6,7 @@ use bencher::Bencher;
 
 use recognizer::Router;
 
-use bravery_router::{NodeType, Node, find};
-use regex::Regex;
+use bravery_router::{add, optimize, create_root_node, find};
 
 fn recognizer(bench: &mut Bencher) {
     let mut router = Router::new();
@@ -22,29 +21,14 @@ fn recognizer(bench: &mut Bencher) {
 
 fn router(bench: &mut Bencher) {
     let comments = &"comments";
-    let root = Node {
-        node_type: NodeType::Static(b"/posts/".to_vec()),
-        value: None,
-        static_children: vec![],
-        regex_children: vec![
-            Node {
-                node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
-                value: None,
-                static_children: vec![
-                    Node {
-                        node_type: NodeType::Static(b"/comments".to_vec()),
-                        value: Some(comments),
-                        static_children: vec![],
-                        regex_children: vec![],
-                    },
-                ],
-                regex_children: vec![],
-            },
-        ],
-    };
+    let mut root = create_root_node();
+    add(&mut root, "/posts/:post_id/comments/:id", comments);
+    add(&mut root, "/posts/:post_id/comments", comments);
+
+    let optimized = optimize(root);
 
     bench.iter(|| {
-        find(&root, "/posts/12/comments").value.unwrap();
+        find(&optimized, "/posts/12/comments").value.unwrap();
     })
 }
 

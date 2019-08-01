@@ -1,5 +1,6 @@
 use crate::node::{MAX_NEASTING_LEVEL_COUNT};
 pub use crate::node::{NodeType, Node};
+use regex::Regex;
 
 #[derive(Debug, PartialEq)]
 pub struct FindResult<'a, T: PartialEq + 'static> {
@@ -40,6 +41,10 @@ impl<'a, T: PartialEq + 'static> FindState<'a, T> {
     }
 }
 
+lazy_static! {
+    static ref WILD_CARD_REGEX : Regex = Regex::new("^(.+)$").unwrap();
+}
+
 fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a [u8], mut state: &mut FindState<'a, T>) -> bool {
     match &node.node_type {
         NodeType::Static(p) => {
@@ -74,9 +79,26 @@ fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a 
                 return false;
             }
         },
+        NodeType::Wildcard() => {
+            let res = WILD_CARD_REGEX.captures(&path[state.index..]).unwrap();
+            let res = res.get(0).unwrap();
+            let res = res.as_str();
+
+            trace!("Matched {} {}", res, res.len());
+
+            let len = res.len();
+
+            state.inc_with_value(len, res);
+
+            state.value = node.value;
+            trace!("Exit with wildcard");
+            return true;
+        },
     }
 
-    trace!("before child index: {}", state.index);
+    trace!("rest: {}, index: {}", &path[state.index..], state.index);
+
+    trace!("Start found children");
 
     let child = node.static_children.iter().find(|sc| {
         match &sc.node_type {
@@ -103,12 +125,12 @@ fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a 
         state.pop();
     }
 
-    trace!("before regex index: {}", state.index);
+    trace!("Trying regex index: {}", state.index);
 
     let child = node.regex_children.iter().find(|sc| {
         match &sc.node_type {
             NodeType::Regex(regex) => {
-                trace!("checking... {}", &path[state.index..]);
+                trace!("checking {:?}... {}", regex, &path[state.index..]);
                 regex.is_match(&path[state.index..])
             },
             _ => unimplemented!(),
@@ -122,6 +144,19 @@ fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a 
             return true;
         }
         trace!("Child regex poped!");
+        state.pop();
+    }
+
+    trace!("Trying wildcard index: {}", state.index);
+
+    let child = node.wildcard_children.get(0);
+    if child.is_some() {
+        trace!("Child wildcard found");
+        let r = find_inner(child.unwrap(), path, path_bytes, state);
+        if r {
+            return true;
+        }
+        trace!("Child wildcard poped!");
         state.pop();
     }
 
@@ -162,6 +197,7 @@ mod tests {
             value: Some(&0),
             static_children: Vec::new(),
             regex_children: Vec::new(),
+            wildcard_children: vec![],
         };
 
         let output = find(&root, "/");
@@ -185,21 +221,25 @@ mod tests {
                     value: Some(&1),
                     static_children: vec![],
                     regex_children: vec![],
+                    wildcard_children: vec![],
                 },
                 Node {
                     node_type: NodeType::Static(vec![b'b']),
                     value: Some(&2),
                     static_children: vec![],
                     regex_children: vec![],
+                    wildcard_children: vec![],
                 },
                 Node {
                     node_type: NodeType::Static(vec![b'c']),
                     value: Some(&3),
                     static_children: vec![],
                     regex_children: vec![],
+                    wildcard_children: vec![],
                 },
             ],
             regex_children: Vec::new(),
+            wildcard_children: vec![],
         };
 
         let output = find(&root, "/a");
@@ -233,8 +273,10 @@ mod tests {
                     value: Some(&1),
                     static_children: vec![],
                     regex_children: vec![],
+                    wildcard_children: vec![],
                 },
             ],
+            wildcard_children: vec![],
         };
 
         let output = find(&root, "/1");
@@ -268,9 +310,11 @@ mod tests {
                             value: Some(&11),
                             static_children: vec![],
                             regex_children: vec![],
+                            wildcard_children: vec![],
                         },
                     ],
                     regex_children: vec![],
+                    wildcard_children: vec![],
                 },
             ],
             regex_children: vec![
@@ -279,8 +323,10 @@ mod tests {
                     value: Some(&1),
                     static_children: vec![],
                     regex_children: vec![],
+                    wildcard_children: vec![],
                 },
             ],
+            wildcard_children: vec![],
         };
 
         let output = find(&root, "/1a");
@@ -315,8 +361,10 @@ mod tests {
                             value: None, // unuseful node!
                             static_children: vec![],
                             regex_children: vec![],
+                            wildcard_children: vec![],
                         },
                     ],
+                    wildcard_children: vec![],
                 },
             ],
             regex_children: vec![
@@ -329,11 +377,14 @@ mod tests {
                             value: Some(&1),
                             static_children: vec![],
                             regex_children: vec![],
+                            wildcard_children: vec![],
                         },
                     ],
                     regex_children: vec![],
+                    wildcard_children: vec![],
                 },
             ],
+            wildcard_children: vec![],
         };
 
         let output = find(&root, "/11");
@@ -350,5 +401,63 @@ mod tests {
 
         let output = find(&root, "/z");
         assert_eq!(FindResult { value: None, params: vec![] }, output);
+    }
+
+    #[test]
+    fn get_wildcard() {
+        let root = Node {
+            node_type: NodeType::Static(vec![b'/']),
+            value: None,
+            static_children: vec![],
+            regex_children: vec![],
+            wildcard_children: vec![
+                Node {
+                    node_type: NodeType::Wildcard(),
+                    value: Some(&1),
+                    static_children: vec![],
+                    regex_children: vec![],
+                    wildcard_children: vec![],
+                },
+            ],
+        };
+
+        let output = find(&root, "/11");
+        assert_eq!(FindResult { value: Some(&1), params: vec!["11"] }, output);
+
+        let output = find(&root, "/1a");
+        assert_eq!(FindResult { value: Some(&1), params: vec!["1a"] }, output);
+
+        let output = find(&root, "/1a/bar/foo");
+        assert_eq!(FindResult { value: Some(&1), params: vec!["1a/bar/foo"] }, output);
+    }
+
+    #[test]
+    fn get_regex_and_wildcard() {
+        let root = Node {
+            node_type: NodeType::Static(vec![b'/']),
+            value: None,
+            static_children: vec![],
+            regex_children: vec![
+                Node {
+                    node_type: NodeType::Regex(Regex::new("^([^/]+)").unwrap()),
+                    value: Some(&1),
+                    static_children: vec![],
+                    regex_children: vec![],
+                    wildcard_children: vec![
+                        Node {
+                            node_type: NodeType::Wildcard(),
+                            value: Some(&1),
+                            static_children: vec![],
+                            regex_children: vec![],
+                            wildcard_children: vec![],
+                        },
+                    ],
+                },
+            ],
+            wildcard_children: vec![],
+        };
+
+        let output = find(&root, "/1a/bar/foo");
+        assert_eq!(FindResult { value: Some(&1), params: vec!["1a", "/bar/foo"] }, output);
     }
 }
