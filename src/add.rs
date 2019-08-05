@@ -1,12 +1,7 @@
 use crate::node::{Node, NodeType};
 use regex::Regex;
 
-fn add_inner<'node, T: PartialEq>(
-    mut root: Node<T>,
-    path: &'node [u8],
-    value: T,
-    index: usize,
-) -> Node<T> {
+fn add_inner<'node, T>(mut root: Node<T>, path: &'node [u8], value: T, index: usize) -> Node<T> {
     if index == path.len() {
         if root.value.is_some() {
             panic!("Value already present!")
@@ -104,7 +99,7 @@ fn add_inner<'node, T: PartialEq>(
     root
 }
 
-pub fn add<'node, T: PartialEq>(root: Node<T>, path: &'node str, value: T) -> Node<T> {
+pub fn add<'node, T>(root: Node<T>, path: &'node str, value: T) -> Node<T> {
     let path = path.as_bytes();
     let path = if path[0] == b'/' { &path[1..] } else { path };
     add_inner(root, path, value, 0)

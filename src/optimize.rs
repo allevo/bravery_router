@@ -1,6 +1,6 @@
 use crate::node::{Node, NodeType};
 
-pub fn optimize<T: PartialEq>(mut root: Node<T>) -> Node<T> {
+pub fn optimize<T>(mut root: Node<T>) -> Node<T> {
     match &root.node_type {
         NodeType::Static(p1) => {
             if root.wildcard_children.is_empty()
