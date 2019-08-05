@@ -1,4 +1,4 @@
-use bravery_router::{add, optimize, find, create_root_node};
+use bravery_router::{add, create_root_node, find, optimize};
 
 fn main() {
     let root = create_root_node();
@@ -39,7 +39,6 @@ fn main() {
 
     println!("Done!");
 }
-
 
 #[cfg(test)]
 mod tests {

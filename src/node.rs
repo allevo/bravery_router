@@ -29,15 +29,9 @@ pub struct Node<T: PartialEq> {
 impl PartialEq for NodeType {
     fn eq(&self, other: &NodeType) -> bool {
         match (self, other) {
-            (NodeType::Static(s1), NodeType::Static(s2)) => {
-                s1 == s2
-            },
-            (NodeType::Regex(r1), NodeType::Regex(r2)) => {
-                r1.as_str() == r2.as_str()
-            },
-            (NodeType::Wildcard(), NodeType::Wildcard()) => {
-                true
-            },
+            (NodeType::Static(s1), NodeType::Static(s2)) => s1 == s2,
+            (NodeType::Regex(r1), NodeType::Regex(r2)) => r1.as_str() == r2.as_str(),
+            (NodeType::Wildcard(), NodeType::Wildcard()) => true,
             _ => false,
         }
     }

@@ -7,19 +7,18 @@ extern crate env_logger;
 #[macro_use]
 extern crate lazy_static;
 
-mod node;
-mod find;
-mod optimize;
 mod add;
+mod find;
+mod node;
+mod optimize;
 
-use crate::node::{NodeType, Node};
+use crate::node::{Node, NodeType};
 
+pub use crate::add::add;
 pub use crate::find::{find, FindResult};
 pub use crate::optimize::optimize;
-pub use crate::add::add;
 
-
-pub fn create_root_node<'node, T: PartialEq> () -> Node<T> {
+pub fn create_root_node<'node, T: PartialEq>() -> Node<T> {
     Node {
         node_type: NodeType::Static(vec![b'/']),
         value: None,
@@ -45,13 +44,29 @@ mod tests {
 
     impl<'node> std::fmt::Debug for Node<u8> {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-            write!(f, "Node {{\n  t: {:?}\n  v: {:?}\n  s: {:?}\n  r: {:?}\n  w: {:?}\n  }}", self.node_type, self.value, self.static_children, self.regex_children, self.wildcard_children)
+            write!(
+                f,
+                "Node {{\n  t: {:?}\n  v: {:?}\n  s: {:?}\n  r: {:?}\n  w: {:?}\n  }}",
+                self.node_type,
+                self.value,
+                self.static_children,
+                self.regex_children,
+                self.wildcard_children
+            )
         }
     }
 
     impl<'node> std::fmt::Debug for Node<String> {
         fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-            write!(f, "Node {{\n  t: {:?}\n  v: {:?}\n  s: {:?}\n  r: {:?}\n  w: {:?}\n  }}", self.node_type, self.value, self.static_children, self.regex_children, self.wildcard_children)
+            write!(
+                f,
+                "Node {{\n  t: {:?}\n  v: {:?}\n  s: {:?}\n  r: {:?}\n  w: {:?}\n  }}",
+                self.node_type,
+                self.value,
+                self.static_children,
+                self.regex_children,
+                self.wildcard_children
+            )
         }
     }
 
@@ -122,13 +137,16 @@ mod tests {
 
     #[test]
     fn with_struct() {
-        let handler = HandlerFor404 { };
+        let handler = HandlerFor404 {};
         let root = create_root_node();
         let root = add(root, "/posts/:post_id/comments/:id", handler);
 
         let optimized = optimize(root);
 
         assert_eq!(true, find(&optimized, "/posts/12/comments").value.is_none());
-        assert_eq!(true, find(&optimized, "/posts/12/comments/foo").value.is_some());
+        assert_eq!(
+            true,
+            find(&optimized, "/posts/12/comments/foo").value.is_some()
+        );
     }
 }

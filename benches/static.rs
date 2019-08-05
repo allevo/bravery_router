@@ -6,7 +6,7 @@ use bencher::Bencher;
 
 use recognizer::Router;
 
-use bravery_router::{add, optimize, create_root_node, find};
+use bravery_router::{add, create_root_node, find, optimize};
 
 fn recognizer(bench: &mut Bencher) {
     let mut router = Router::new();
@@ -22,9 +22,9 @@ fn recognizer(bench: &mut Bencher) {
 
 fn router(bench: &mut Bencher) {
     let root = create_root_node();
-    let root = add(root,"/thomas", "Thomas");
-    let root = add(root,"/tom", "Tom");
-    let root = add(root,"/wycats", "Yehuda");
+    let root = add(root, "/thomas", "Thomas");
+    let root = add(root, "/tom", "Tom");
+    let root = add(root, "/wycats", "Yehuda");
 
     let optimized = optimize(root);
 

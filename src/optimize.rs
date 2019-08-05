@@ -1,10 +1,13 @@
-
 use crate::node::{Node, NodeType};
 
-pub fn optimize<T: PartialEq> (mut root: Node<T>) -> Node<T> {
+pub fn optimize<T: PartialEq>(mut root: Node<T>) -> Node<T> {
     match &root.node_type {
         NodeType::Static(p1) => {
-            if root.wildcard_children.is_empty() && root.regex_children.is_empty() && root.value.is_none() && (root.static_children.len() == 1) {
+            if root.wildcard_children.is_empty()
+                && root.regex_children.is_empty()
+                && root.value.is_none()
+                && (root.static_children.len() == 1)
+            {
                 let child = root.static_children.pop().unwrap();
                 match &child.node_type {
                     NodeType::Static(p2) => {
@@ -19,37 +22,25 @@ pub fn optimize<T: PartialEq> (mut root: Node<T>) -> Node<T> {
                             regex_children: child.regex_children,
                             wildcard_children: child.wildcard_children,
                         })
-                    },
+                    }
                     _ => panic!(),
                 }
             } else {
-                root.static_children = root.static_children.into_iter()
-                    .map(optimize)
-                    .collect();
+                root.static_children = root.static_children.into_iter().map(optimize).collect();
 
-                root.regex_children = root.regex_children.into_iter()
-                    .map(optimize)
-                    .collect();
+                root.regex_children = root.regex_children.into_iter().map(optimize).collect();
 
-                root.wildcard_children = root.wildcard_children.into_iter()
-                    .map(optimize)
-                    .collect();
+                root.wildcard_children = root.wildcard_children.into_iter().map(optimize).collect();
 
                 root
             }
-        },
+        }
         _ => {
-            root.static_children = root.static_children.into_iter()
-                .map(optimize)
-                .collect();
+            root.static_children = root.static_children.into_iter().map(optimize).collect();
 
-            root.regex_children = root.regex_children.into_iter()
-                .map(optimize)
-                .collect();
+            root.regex_children = root.regex_children.into_iter().map(optimize).collect();
 
-            root.wildcard_children = root.wildcard_children.into_iter()
-                .map(optimize)
-                .collect();
+            root.wildcard_children = root.wildcard_children.into_iter().map(optimize).collect();
 
             root
         }
@@ -72,13 +63,16 @@ mod tests {
         };
 
         let optimized = optimize(root);
-        assert_eq!(optimized, Node {
-            node_type: NodeType::Static(vec![b'/']),
-            value: Some(0),
-            static_children: vec![],
-            regex_children: vec![],
-            wildcard_children: vec![],
-        });
+        assert_eq!(
+            optimized,
+            Node {
+                node_type: NodeType::Static(vec![b'/']),
+                value: Some(0),
+                static_children: vec![],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }
+        );
     }
 
     #[test]
@@ -86,27 +80,28 @@ mod tests {
         let root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
-            static_children: vec![
-                Node {
-                    node_type: NodeType::Static(vec![b'a']),
-                    value: Some(0),
-                    static_children: vec![],
-                    regex_children: vec![],
-                    wildcard_children: vec![],
-                }
-            ],
+            static_children: vec![Node {
+                node_type: NodeType::Static(vec![b'a']),
+                value: Some(0),
+                static_children: vec![],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }],
             regex_children: vec![],
             wildcard_children: vec![],
         };
 
         let optimized = optimize(root);
-        assert_eq!(optimized, Node {
-            node_type: NodeType::Static(vec![b'/', b'a']),
-            value: Some(0),
-            static_children: vec![],
-            regex_children: vec![],
-            wildcard_children: vec![],
-        });
+        assert_eq!(
+            optimized,
+            Node {
+                node_type: NodeType::Static(vec![b'/', b'a']),
+                value: Some(0),
+                static_children: vec![],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }
+        );
     }
 
     #[test]
@@ -114,35 +109,34 @@ mod tests {
         let root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: Some(1),
-            static_children: vec![
-                Node {
-                    node_type: NodeType::Static(vec![b'a']),
-                    value: Some(0),
-                    static_children: vec![],
-                    regex_children: vec![],
-                    wildcard_children: vec![],
-                }
-            ],
+            static_children: vec![Node {
+                node_type: NodeType::Static(vec![b'a']),
+                value: Some(0),
+                static_children: vec![],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }],
             regex_children: vec![],
             wildcard_children: vec![],
         };
 
         let optimized = optimize(root);
-        assert_eq!(optimized, Node {
-            node_type: NodeType::Static(vec![b'/']),
-            value: Some(1),
-            static_children: vec![
-                Node {
+        assert_eq!(
+            optimized,
+            Node {
+                node_type: NodeType::Static(vec![b'/']),
+                value: Some(1),
+                static_children: vec![Node {
                     node_type: NodeType::Static(vec![b'a']),
                     value: Some(0),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
-            regex_children: vec![],
-            wildcard_children: vec![],
-        });
+                }],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }
+        );
     }
 
     #[test]
@@ -150,43 +144,40 @@ mod tests {
         let root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: Some(1),
-            static_children: vec![
-                Node {
-                    node_type: NodeType::Static(vec![b'a']),
-                    value: None,
-                    static_children: vec![
-                        Node {
-                            node_type: NodeType::Static(vec![b'b']),
-                            value: Some(2),
-                            static_children: vec![],
-                            regex_children: vec![],
-                            wildcard_children: vec![],
-                        }
-                    ],
+            static_children: vec![Node {
+                node_type: NodeType::Static(vec![b'a']),
+                value: None,
+                static_children: vec![Node {
+                    node_type: NodeType::Static(vec![b'b']),
+                    value: Some(2),
+                    static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
+                }],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }],
             regex_children: vec![],
             wildcard_children: vec![],
         };
 
         let optimized = optimize(root);
-        assert_eq!(optimized, Node {
-            node_type: NodeType::Static(vec![b'/']),
-            value: Some(1),
-            static_children: vec![
-                Node {
+        assert_eq!(
+            optimized,
+            Node {
+                node_type: NodeType::Static(vec![b'/']),
+                value: Some(1),
+                static_children: vec![Node {
                     node_type: NodeType::Static(vec![b'a', b'b']),
                     value: Some(2),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
-            regex_children: vec![],
-            wildcard_children: vec![],
-        });
+                }],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }
+        );
     }
 
     #[test]
@@ -194,67 +185,58 @@ mod tests {
         let root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
-            static_children: vec![
-                Node {
-                    node_type: NodeType::Static(vec![b'a']),
+            static_children: vec![Node {
+                node_type: NodeType::Static(vec![b'a']),
+                value: None,
+                static_children: vec![Node {
+                    node_type: NodeType::Static(vec![b'b']),
                     value: None,
-                    static_children: vec![
-                        Node {
-                            node_type: NodeType::Static(vec![b'b']),
+                    static_children: vec![Node {
+                        node_type: NodeType::Static(vec![b'c']),
+                        value: None,
+                        static_children: vec![Node {
+                            node_type: NodeType::Static(vec![b'd']),
                             value: None,
-                            static_children: vec![
-                                Node {
-                                    node_type: NodeType::Static(vec![b'c']),
-                                    value: None,
-                                    static_children: vec![
-                                        Node {
-                                            node_type: NodeType::Static(vec![b'd']),
-                                            value: None,
-                                            static_children: vec![
-                                                Node {
-                                                    node_type: NodeType::Static(vec![b'e']),
-                                                    value: None,
-                                                    static_children: vec![
-                                                        Node {
-                                                            node_type: NodeType::Static(vec![b'f']),
-                                                            value: Some(1),
-                                                            static_children: vec![],
-                                                            regex_children: vec![],
-                                                            wildcard_children: vec![],
-                                                        }
-                                                    ],
-                                                    regex_children: vec![],
-                                                    wildcard_children: vec![],
-                                                }
-                                            ],
-                                            regex_children: vec![],
-                                            wildcard_children: vec![],
-                                        }
-                                    ],
+                            static_children: vec![Node {
+                                node_type: NodeType::Static(vec![b'e']),
+                                value: None,
+                                static_children: vec![Node {
+                                    node_type: NodeType::Static(vec![b'f']),
+                                    value: Some(1),
+                                    static_children: vec![],
                                     regex_children: vec![],
                                     wildcard_children: vec![],
-                                }
-                            ],
+                                }],
+                                regex_children: vec![],
+                                wildcard_children: vec![],
+                            }],
                             regex_children: vec![],
                             wildcard_children: vec![],
-                        }
-                    ],
+                        }],
+                        regex_children: vec![],
+                        wildcard_children: vec![],
+                    }],
                     regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
+                }],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }],
             regex_children: vec![],
             wildcard_children: vec![],
         };
 
         let optimized = optimize(root);
-        assert_eq!(optimized, Node {
-            node_type: NodeType::Static(vec![b'/', b'a', b'b', b'c', b'd', b'e', b'f']),
-            value: Some(1),
-            static_children: vec![],
-            regex_children: vec![],
-            wildcard_children: vec![],
-        });
+        assert_eq!(
+            optimized,
+            Node {
+                node_type: NodeType::Static(vec![b'/', b'a', b'b', b'c', b'd', b'e', b'f']),
+                value: Some(1),
+                static_children: vec![],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }
+        );
     }
 
     #[test]
@@ -263,34 +245,33 @@ mod tests {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
-            regex_children: vec![
-                Node {
-                    node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
-                    value: Some(0),
-                    static_children: vec![],
-                    regex_children: vec![],
-                    wildcard_children: vec![],
-                }
-            ],
+            regex_children: vec![Node {
+                node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
+                value: Some(0),
+                static_children: vec![],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }],
             wildcard_children: vec![],
         };
 
         let optimized = optimize(root);
-        assert_eq!(optimized, Node {
-            node_type: NodeType::Static(vec![b'/']),
-            value: None,
-            static_children: vec![],
-            regex_children: vec![
-                Node {
+        assert_eq!(
+            optimized,
+            Node {
+                node_type: NodeType::Static(vec![b'/']),
+                value: None,
+                static_children: vec![],
+                regex_children: vec![Node {
                     node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
                     value: Some(0),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
-            wildcard_children: vec![],
-        });
+                }],
+                wildcard_children: vec![],
+            }
+        );
     }
 
     #[test]
@@ -299,58 +280,51 @@ mod tests {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
-            regex_children: vec![
-                Node {
-                    node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
-                    value: Some(0),
-                    static_children: vec![
-                        Node {
-                            node_type: NodeType::Static(vec![b'/']),
-                            value: None,
-                            static_children: vec![
-                                Node {
-                                    node_type: NodeType::Static(vec![b'b']),
-                                    value: Some(2),
-                                    static_children: vec![],
-                                    regex_children: vec![],
-                                    wildcard_children: vec![],
-                                }
-                            ],
-                            regex_children: vec![],
-                            wildcard_children: vec![],
-                        }
-                    ],
+            regex_children: vec![Node {
+                node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
+                value: Some(0),
+                static_children: vec![Node {
+                    node_type: NodeType::Static(vec![b'/']),
+                    value: None,
+                    static_children: vec![Node {
+                        node_type: NodeType::Static(vec![b'b']),
+                        value: Some(2),
+                        static_children: vec![],
+                        regex_children: vec![],
+                        wildcard_children: vec![],
+                    }],
                     regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
+                }],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }],
             wildcard_children: vec![],
         };
 
         let optimized = optimize(root);
-        assert_eq!(optimized, Node {
-            node_type: NodeType::Static(vec![b'/']),
-            value: None,
-            static_children: vec![],
-            regex_children: vec![
-                Node {
+        assert_eq!(
+            optimized,
+            Node {
+                node_type: NodeType::Static(vec![b'/']),
+                value: None,
+                static_children: vec![],
+                regex_children: vec![Node {
                     node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
                     value: Some(0),
-                    static_children: vec![
-                        Node {
-                            node_type: NodeType::Static(vec![b'/', b'b']),
-                            value: Some(2),
-                            static_children: vec![],
-                            regex_children: vec![],
-                            wildcard_children: vec![],
-                        }
-                    ],
+                    static_children: vec![Node {
+                        node_type: NodeType::Static(vec![b'/', b'b']),
+                        value: Some(2),
+                        static_children: vec![],
+                        regex_children: vec![],
+                        wildcard_children: vec![],
+                    }],
                     regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
-            wildcard_children: vec![],
-        });
+                }],
+                wildcard_children: vec![],
+            }
+        );
     }
 
     #[test]
@@ -359,98 +333,81 @@ mod tests {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
-            regex_children: vec![
-                Node {
-                    node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
-                    value: Some(0),
-                    static_children: vec![
-                        Node {
-                            node_type: NodeType::Static(vec![b'/']),
-                            value: None,
-                            static_children: vec![
-                                Node {
-                                    node_type: NodeType::Static(vec![b'b']),
-                                    value: Some(2),
-                                    static_children: vec![],
-                                    regex_children: vec![],
-                                    wildcard_children: vec![],
-                                }
-                            ],
-                            regex_children: vec![],
-                            wildcard_children: vec![],
-                        }
-                    ],
-                    regex_children: vec![
-                        Node {
-                            node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
-                            value: Some(0),
-                            static_children: vec![
-                                Node {
-                                    node_type: NodeType::Static(vec![b'/']),
-                                    value: None,
-                                    static_children: vec![
-                                        Node {
-                                            node_type: NodeType::Static(vec![b'c']),
-                                            value: Some(2),
-                                            static_children: vec![],
-                                            regex_children: vec![],
-                                            wildcard_children: vec![],
-                                        }
-                                    ],
-                                    regex_children: vec![],
-                                    wildcard_children: vec![],
-                                }
-                            ],
-                            regex_children: vec![],
-                            wildcard_children: vec![],
-                        }
-                    ],
+            regex_children: vec![Node {
+                node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
+                value: Some(0),
+                static_children: vec![Node {
+                    node_type: NodeType::Static(vec![b'/']),
+                    value: None,
+                    static_children: vec![Node {
+                        node_type: NodeType::Static(vec![b'b']),
+                        value: Some(2),
+                        static_children: vec![],
+                        regex_children: vec![],
+                        wildcard_children: vec![],
+                    }],
+                    regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
-            wildcard_children: vec![],
-        };
-
-        let optimized = optimize(root);
-        assert_eq!(optimized, Node {
-            node_type: NodeType::Static(vec![b'/']),
-            value: None,
-            static_children: vec![],
-            regex_children: vec![
-                Node {
+                }],
+                regex_children: vec![Node {
                     node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
                     value: Some(0),
-                    static_children: vec![
-                        Node {
-                            node_type: NodeType::Static(vec![b'/', b'b']),
+                    static_children: vec![Node {
+                        node_type: NodeType::Static(vec![b'/']),
+                        value: None,
+                        static_children: vec![Node {
+                            node_type: NodeType::Static(vec![b'c']),
                             value: Some(2),
                             static_children: vec![],
                             regex_children: vec![],
                             wildcard_children: vec![],
-                        }
-                    ],
-                    regex_children: vec![
-                        Node {
-                            node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
-                            value: Some(0),
-                            static_children: vec![
-                                Node {
-                                    node_type: NodeType::Static(vec![b'/', b'c']),
-                                    value: Some(2),
-                                    static_children: vec![],
-                                    regex_children: vec![],
-                                    wildcard_children: vec![],
-                                }
-                            ],
+                        }],
+                        regex_children: vec![],
+                        wildcard_children: vec![],
+                    }],
+                    regex_children: vec![],
+                    wildcard_children: vec![],
+                }],
+                wildcard_children: vec![],
+            }],
+            wildcard_children: vec![],
+        };
+
+        let optimized = optimize(root);
+        assert_eq!(
+            optimized,
+            Node {
+                node_type: NodeType::Static(vec![b'/']),
+                value: None,
+                static_children: vec![],
+                regex_children: vec![Node {
+                    node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
+                    value: Some(0),
+                    static_children: vec![Node {
+                        node_type: NodeType::Static(vec![b'/', b'b']),
+                        value: Some(2),
+                        static_children: vec![],
+                        regex_children: vec![],
+                        wildcard_children: vec![],
+                    }],
+                    regex_children: vec![Node {
+                        node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
+                        value: Some(0),
+                        static_children: vec![Node {
+                            node_type: NodeType::Static(vec![b'/', b'c']),
+                            value: Some(2),
+                            static_children: vec![],
                             regex_children: vec![],
                             wildcard_children: vec![],
-                        }
-                    ],
+                        }],
+                        regex_children: vec![],
+                        wildcard_children: vec![],
+                    }],
                     wildcard_children: vec![],
-                }
-            ],
-            wildcard_children: vec![],
-        });
+                }],
+                wildcard_children: vec![],
+            }
+        );
     }
 
     #[test]
@@ -460,36 +417,35 @@ mod tests {
             value: None,
             static_children: vec![],
             regex_children: vec![],
-            wildcard_children: vec![
-                Node{
-                    node_type: NodeType::Wildcard(),
-                    value: Some(1),
-                    static_children: vec![],
-                    regex_children: vec![],
-                    wildcard_children: vec![],
-                },
-            ],
+            wildcard_children: vec![Node {
+                node_type: NodeType::Wildcard(),
+                value: Some(1),
+                static_children: vec![],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }],
         };
 
         let optimized = optimize(root);
 
         println!("{:?}", optimized);
 
-        assert_eq!(optimized, Node {
-            node_type: NodeType::Static(vec![b'/']),
-            value: None,
-            static_children: vec![],
-            regex_children: vec![],
-            wildcard_children: vec![
-                Node {
+        assert_eq!(
+            optimized,
+            Node {
+                node_type: NodeType::Static(vec![b'/']),
+                value: None,
+                static_children: vec![],
+                regex_children: vec![],
+                wildcard_children: vec![Node {
                     node_type: NodeType::Wildcard(),
                     value: Some(1),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
-        });
+                }],
+            }
+        );
     }
 
     #[test]
@@ -497,39 +453,31 @@ mod tests {
         let root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
-            static_children: vec![
-                Node {
-                    node_type: NodeType::Static(vec![b'f']),
+            static_children: vec![Node {
+                node_type: NodeType::Static(vec![b'f']),
+                value: None,
+                static_children: vec![Node {
+                    node_type: NodeType::Static(vec![b'o']),
                     value: None,
-                    static_children: vec![
-                        Node {
-                            node_type: NodeType::Static(vec![b'o']),
-                            value: None,
-                            static_children: vec![
-                                Node {
-                                    node_type: NodeType::Static(vec![b'o']),
-                                    value: None,
-                                    static_children: vec![],
-                                    regex_children: vec![],
-                                    wildcard_children: vec![
-                                        Node{
-                                            node_type: NodeType::Wildcard(),
-                                            value: Some(1),
-                                            static_children: vec![],
-                                            regex_children: vec![],
-                                            wildcard_children: vec![],
-                                        },
-                                    ],
-                                },
-                            ],
+                    static_children: vec![Node {
+                        node_type: NodeType::Static(vec![b'o']),
+                        value: None,
+                        static_children: vec![],
+                        regex_children: vec![],
+                        wildcard_children: vec![Node {
+                            node_type: NodeType::Wildcard(),
+                            value: Some(1),
+                            static_children: vec![],
                             regex_children: vec![],
                             wildcard_children: vec![],
-                        },
-                    ],
+                        }],
+                    }],
                     regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
+                }],
+                regex_children: vec![],
+                wildcard_children: vec![],
+            }],
             regex_children: vec![],
             wildcard_children: vec![],
         };
@@ -538,20 +486,21 @@ mod tests {
 
         println!("{:?}", optimized);
 
-        assert_eq!(optimized, Node {
-            node_type: NodeType::Static(vec![b'/', b'f', b'o', b'o']),
-            value: None,
-            static_children: vec![],
-            regex_children: vec![],
-            wildcard_children: vec![
-                Node {
+        assert_eq!(
+            optimized,
+            Node {
+                node_type: NodeType::Static(vec![b'/', b'f', b'o', b'o']),
+                value: None,
+                static_children: vec![],
+                regex_children: vec![],
+                wildcard_children: vec![Node {
                     node_type: NodeType::Wildcard(),
                     value: Some(1),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
-                }
-            ],
-        });
+                }],
+            }
+        );
     }
 }
