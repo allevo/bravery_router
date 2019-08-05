@@ -18,7 +18,7 @@ pub use crate::add::add;
 pub use crate::find::{find, FindResult};
 pub use crate::optimize::optimize;
 
-pub fn create_root_node<'node, T: PartialEq>() -> Node<T> {
+pub fn create_root_node<T: PartialEq>() -> Node<T> {
     Node {
         node_type: NodeType::Static(vec![b'/']),
         value: None,

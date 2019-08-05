@@ -45,7 +45,7 @@ lazy_static! {
 }
 
 fn get_value_pointer_from_node<'req, T: PartialEq>(node: &'req Node<T>) -> Option<&T> {
-    return node.value.as_ref();
+    node.value.as_ref()
 }
 
 fn find_inner<'req, T: PartialEq>(
@@ -192,10 +192,7 @@ pub fn find<'req, T: PartialEq + Clone>(
     let mut params = find_state.params[0..find_state.param_number].to_vec();
     params.retain(|x| !x.is_empty());
 
-    FindResult {
-        value: value,
-        params,
-    }
+    FindResult { value, params }
 }
 
 #[cfg(test)]

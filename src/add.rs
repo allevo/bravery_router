@@ -101,13 +101,13 @@ fn add_inner<'node, T: PartialEq>(
 
     let child = add_inner(child, path, value, index + 1);
     root.static_children.push(child);
-    return root;
+    root
 }
 
 pub fn add<'node, T: PartialEq>(root: Node<T>, path: &'node str, value: T) -> Node<T> {
     let path = path.as_bytes();
     let path = if path[0] == b'/' { &path[1..] } else { path };
-    return add_inner(root, path, value, 0);
+    add_inner(root, path, value, 0)
 }
 
 #[cfg(test)]
