@@ -18,7 +18,7 @@ impl NodeType {
     }
 }
 
-pub struct Node<T: PartialEq> {
+pub struct Node<T> {
     pub node_type: NodeType,
     pub value: Option<T>,
     pub static_children: Vec<Node<T>>,
@@ -37,12 +37,12 @@ impl PartialEq for NodeType {
     }
 }
 
-impl<'node, T: PartialEq> PartialEq for Node<T> {
+impl<'node, T> PartialEq for Node<T> {
     fn eq(&self, other: &Node<T>) -> bool {
-        self.static_children == other.static_children
+        self.node_type == other.node_type
+            && self.static_children == other.static_children
             && self.regex_children == other.regex_children
             && self.wildcard_children == other.wildcard_children
-            && self.value == other.value
             && self.node_type == other.node_type
     }
 }

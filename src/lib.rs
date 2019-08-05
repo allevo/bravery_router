@@ -19,7 +19,7 @@ pub use crate::find::{find, FindResult};
 pub use crate::node::Node;
 pub use crate::optimize::optimize;
 
-pub fn create_root_node<T: PartialEq>() -> Node<T> {
+pub fn create_root_node<T>() -> Node<T> {
     Node {
         node_type: NodeType::Static(vec![b'/']),
         value: None,
@@ -68,6 +68,12 @@ mod tests {
                 self.regex_children,
                 self.wildcard_children
             )
+        }
+    }
+
+    impl<'req> std::cmp::PartialEq for FindResult<'req, u8> {
+        fn eq(&self, other: &Self) -> bool {
+            self.params == other.params && self.value == other.value
         }
     }
 

@@ -2,8 +2,8 @@ use crate::node::MAX_NEASTING_LEVEL_COUNT;
 pub use crate::node::{Node, NodeType};
 use regex::Regex;
 
-#[derive(Debug, PartialEq)]
-pub struct FindResult<'req, T: PartialEq + Clone> {
+#[derive(Debug)]
+pub struct FindResult<'req, T: Clone> {
     pub value: Option<&'req T>,
     pub params: Vec<&'req str>,
 }
@@ -44,11 +44,11 @@ lazy_static! {
     static ref WILD_CARD_REGEX: Regex = Regex::new("^(.+)$").unwrap();
 }
 
-fn get_value_pointer_from_node<'req, T: PartialEq>(node: &'req Node<T>) -> Option<&T> {
+fn get_value_pointer_from_node<'req, T>(node: &'req Node<T>) -> Option<&T> {
     node.value.as_ref()
 }
 
-fn find_inner<'req, T: PartialEq>(
+fn find_inner<'req, T>(
     node: &'req Node<T>,
     path: &'req str,
     path_bytes: &'req [u8],
@@ -170,10 +170,7 @@ fn find_inner<'req, T: PartialEq>(
     None
 }
 
-pub fn find<'req, T: PartialEq + Clone>(
-    node: &'req Node<T>,
-    path: &'req str,
-) -> FindResult<'req, T> {
+pub fn find<'req, T: Clone>(node: &'req Node<T>, path: &'req str) -> FindResult<'req, T> {
     let mut find_state = FindState {
         index: 0,
         steps: [0; MAX_NEASTING_LEVEL_COUNT],
