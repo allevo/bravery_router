@@ -21,10 +21,10 @@ fn recognizer(bench: &mut Bencher) {
 }
 
 fn router(bench: &mut Bencher) {
-    let mut root = create_root_node();
-    add(&mut root,"/thomas", &"Thomas");
-    add(&mut root,"/tom", &"Tom");
-    add(&mut root,"/wycats", &"Yehuda");
+    let root = create_root_node();
+    let root = add(root,"/thomas", "Thomas");
+    let root = add(root,"/tom", "Tom");
+    let root = add(root,"/wycats", "Yehuda");
 
     let optimized = optimize(root);
 

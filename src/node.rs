@@ -18,9 +18,9 @@ impl NodeType {
     }
 }
 
-pub struct Node<T: PartialEq + 'static> {
+pub struct Node<T: PartialEq> {
     pub node_type: NodeType,
-    pub value: Option<&'static T>,
+    pub value: Option<T>,
     pub static_children: Vec<Node<T>>,
     pub regex_children: Vec<Node<T>>,
     pub wildcard_children: Vec<Node<T>>,
@@ -43,7 +43,7 @@ impl PartialEq for NodeType {
     }
 }
 
-impl<T: PartialEq + 'static> PartialEq for Node<T> {
+impl<'node, T: PartialEq> PartialEq for Node<T> {
     fn eq(&self, other: &Node<T>) -> bool {
         self.static_children == other.static_children
             && self.regex_children == other.regex_children

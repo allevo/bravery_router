@@ -19,9 +19,9 @@ fn recognizer(bench: &mut Bencher) {
 }
 
 fn router(bench: &mut Bencher) {
-    let comments = &"comments";
-    let mut root = create_root_node();
-    add(&mut root,"/posts/*", comments);
+    let comments = "comments";
+    let root = create_root_node();
+    let root = add(root,"/posts/*", comments);
 
     let optimized = optimize(root);
 

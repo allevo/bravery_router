@@ -11,8 +11,8 @@ use bravery_router::{add, optimize, create_root_node, find};
 fn recognizer(bench: &mut Bencher) {
     let mut router = Router::new();
 
-    router.add("/posts/:post_id/comments/:id", "comment".to_string());
-    router.add("/posts/:post_id/comments", "comments".to_string());
+    router.add("/posts/:post_id/comments/:id", "comment1".to_string());
+    router.add("/posts/:post_id/comments", "comments2".to_string());
 
     bench.iter(|| {
         router.recognize("/posts/12/comments").unwrap();
@@ -20,10 +20,9 @@ fn recognizer(bench: &mut Bencher) {
 }
 
 fn router(bench: &mut Bencher) {
-    let comments = &"comments";
-    let mut root = create_root_node();
-    add(&mut root, "/posts/:post_id/comments/:id", comments);
-    add(&mut root, "/posts/:post_id/comments", comments);
+    let root = create_root_node();
+    let root = add(root, "/posts/:post_id/comments/:id", "comments1");
+    let root = add(root, "/posts/:post_id/comments", "comments2");
 
     let optimized = optimize(root);
 

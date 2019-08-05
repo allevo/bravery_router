@@ -3,22 +3,21 @@ pub use crate::node::{NodeType, Node};
 use regex::Regex;
 
 #[derive(Debug, PartialEq)]
-pub struct FindResult<'a, T: PartialEq + 'static> {
-    pub value: Option<&'static T>,
-    pub params: Vec<&'a str>,
+pub struct FindResult<'req, T: PartialEq + Clone> {
+    pub value: Option<&'req T>,
+    pub params: Vec<&'req str>,
 }
 
 #[derive(Debug)]
-struct FindState<'a, T: PartialEq + 'static> {
+struct FindState<'req> {
     index: usize,
     steps: [usize; MAX_NEASTING_LEVEL_COUNT],
     step_number: usize,
-    value: Option<&'static T>,
-    params: [&'a str; MAX_NEASTING_LEVEL_COUNT],
+    params: [&'req str; MAX_NEASTING_LEVEL_COUNT],
     param_number: usize,
 }
 
-impl<'a, T: PartialEq + 'static> FindState<'a, T> {
+impl<'req> FindState<'req> {
     fn inc (&mut self, n: usize) {
         self.index += n;
         self.steps[self.step_number] = n;
@@ -28,7 +27,7 @@ impl<'a, T: PartialEq + 'static> FindState<'a, T> {
         self.param_number += 1;
     }
 
-    fn inc_with_value (&mut self, n: usize, p: &'a str) {
+    fn inc_with_value (&mut self, n: usize, p: &'req str) {
         self.inc(n);
         self.params[self.param_number - 1] = p;
     }
@@ -45,17 +44,20 @@ lazy_static! {
     static ref WILD_CARD_REGEX : Regex = Regex::new("^(.+)$").unwrap();
 }
 
-fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a [u8], mut state: &mut FindState<'a, T>) -> bool {
+fn get_value_pointer_from_node<'req, T: PartialEq>(node: &'req Node<T>) -> Option<&T> {
+    return node.value.as_ref();
+}
+
+fn find_inner<'req, T: PartialEq> (node: &'req Node<T>, path: &'req str, path_bytes: &'req [u8], state: &mut FindState<'req>) -> Option<&'req T> {
     match &node.node_type {
         NodeType::Static(p) => {
             if *p == &path_bytes[state.index..] {
                 if node.value.is_some() {
-                    state.value = node.value;
                     trace!("Exit with static! {} {}", std::str::from_utf8(&path_bytes[state.index..]).unwrap(), std::str::from_utf8(&*p).unwrap());
-                    return true;
+                    return get_value_pointer_from_node(node);
                 }
                 state.inc(p.len());
-                return false;
+                return None;
             } else {
                 state.inc(p.len());
             }
@@ -72,11 +74,10 @@ fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a 
             state.inc_with_value(len, res);
             if state.index == path.len() {
                 if node.value.is_some() {
-                    state.value = node.value;
                     trace!("Exit with regex");
-                    return true;
+                    return get_value_pointer_from_node(node);
                 }
-                return false;
+                return None;
             }
         },
         NodeType::Wildcard() => {
@@ -90,9 +91,8 @@ fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a 
 
             state.inc_with_value(len, res);
 
-            state.value = node.value;
             trace!("Exit with wildcard");
-            return true;
+            return get_value_pointer_from_node(node);
         },
     }
 
@@ -104,7 +104,7 @@ fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a 
         match &sc.node_type {
             NodeType::Static(sp) => {
                 for i in 0..sp.len() {
-                    if sp[i] != path_bytes[state.index + i] {
+                    if path_bytes.len() <= state.index + i || sp[i] != path_bytes[state.index + i] {
                         return false;
                     }
                 }
@@ -118,8 +118,8 @@ fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a 
     if child.is_some() {
         trace!("Child static found");
         let r = find_inner(child.unwrap(), path, path_bytes, state);
-        if r {
-            return true;
+        if r.is_some() {
+            return r;
         }
         trace!("Child static poped!");
         state.pop();
@@ -140,8 +140,8 @@ fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a 
     if child.is_some() {
         trace!("Child regex found");
         let r = find_inner(child.unwrap(), path, path_bytes, state);
-        if r {
-            return true;
+        if r.is_some() {
+            return r;
         }
         trace!("Child regex poped!");
         state.pop();
@@ -153,8 +153,8 @@ fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a 
     if child.is_some() {
         trace!("Child wildcard found");
         let r = find_inner(child.unwrap(), path, path_bytes, state);
-        if r {
-            return true;
+        if r.is_some() {
+            return r;
         }
         trace!("Child wildcard poped!");
         state.pop();
@@ -162,24 +162,30 @@ fn find_inner<'a, T: PartialEq> (node: &Node<T>, path: &'a str, path_bytes: &'a 
 
     trace!("No found in the branch!");
 
-    false
+    None
 }
 
-pub fn find<'a, T: PartialEq> (node: &Node<T>, path: &'a str) -> FindResult<'a, T> {
+pub fn find<'req, T: PartialEq + Clone> (node: &'req Node<T>, path: &'req str) -> FindResult<'req, T> {
     let mut find_state = FindState {
         index: 0,
         steps: [0; MAX_NEASTING_LEVEL_COUNT],
         step_number: 0,
-        value: None,
         params: [""; MAX_NEASTING_LEVEL_COUNT],
         param_number: 0
     };
-    find_inner(node, path, path.as_bytes(), &mut find_state);
+    let value = find_inner(node, path, path.as_bytes(), &mut find_state);
+    if value.is_none() {
+        return FindResult {
+            value: None,
+            params: vec![],
+        };
+    }
 
     let mut params = find_state.params[0..find_state.param_number].to_vec();
     params.retain(|x| !x.is_empty());
+
     FindResult {
-        value: find_state.value,
+        value: value,
         params,
     }
 }
@@ -194,7 +200,7 @@ mod tests {
     fn get_root() {
         let root = Node {
             node_type: NodeType::Static(vec![b'/']),
-            value: Some(&0),
+            value: Some(0),
             static_children: Vec::new(),
             regex_children: Vec::new(),
             wildcard_children: vec![],
@@ -218,21 +224,21 @@ mod tests {
             static_children: vec![
                 Node {
                     node_type: NodeType::Static(vec![b'a']),
-                    value: Some(&1),
+                    value: Some(1),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
                 },
                 Node {
                     node_type: NodeType::Static(vec![b'b']),
-                    value: Some(&2),
+                    value: Some(2),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
                 },
                 Node {
                     node_type: NodeType::Static(vec![b'c']),
-                    value: Some(&3),
+                    value: Some(3),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
@@ -270,7 +276,7 @@ mod tests {
             regex_children: vec![
                 Node {
                     node_type: NodeType::Regex(Regex::new("^(\\d+)").unwrap()),
-                    value: Some(&1),
+                    value: Some(1),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
@@ -307,7 +313,7 @@ mod tests {
                     static_children: vec![
                         Node {
                             node_type: NodeType::Static(vec![b'a']),
-                            value: Some(&11),
+                            value: Some(11),
                             static_children: vec![],
                             regex_children: vec![],
                             wildcard_children: vec![],
@@ -320,7 +326,7 @@ mod tests {
             regex_children: vec![
                 Node {
                     node_type: NodeType::Regex(Regex::new(r"^(\d+)").unwrap()),
-                    value: Some(&1),
+                    value: Some(1),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
@@ -374,7 +380,7 @@ mod tests {
                     static_children: vec![
                         Node {
                             node_type: NodeType::Static(vec![b'1']),
-                            value: Some(&1),
+                            value: Some(1),
                             static_children: vec![],
                             regex_children: vec![],
                             wildcard_children: vec![],
@@ -413,7 +419,7 @@ mod tests {
             wildcard_children: vec![
                 Node {
                     node_type: NodeType::Wildcard(),
-                    value: Some(&1),
+                    value: Some(1),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
@@ -440,13 +446,13 @@ mod tests {
             regex_children: vec![
                 Node {
                     node_type: NodeType::Regex(Regex::new("^([^/]+)").unwrap()),
-                    value: Some(&1),
+                    value: Some(1),
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![
                         Node {
                             node_type: NodeType::Wildcard(),
-                            value: Some(&1),
+                            value: Some(2),
                             static_children: vec![],
                             regex_children: vec![],
                             wildcard_children: vec![],
@@ -458,6 +464,47 @@ mod tests {
         };
 
         let output = find(&root, "/1a/bar/foo");
-        assert_eq!(FindResult { value: Some(&1), params: vec!["1a", "/bar/foo"] }, output);
+        assert_eq!(FindResult { value: Some(&2), params: vec!["1a", "/bar/foo"] }, output);
+    }
+
+    #[test]
+    fn get_double_regex() {
+        let root = Node {
+            node_type: NodeType::Static(vec![b'/', b'p', b'/']),
+            value: None,
+            static_children: vec![],
+            regex_children: vec![
+                Node {
+                    node_type: NodeType::Regex(Regex::new("^([^/]+)").unwrap()),
+                    value: None,
+                    static_children: vec![
+                        Node {
+                            node_type: NodeType::Static(vec![b'/', b'c', b'/']),
+                            value: None,
+                            static_children: vec![],
+                            regex_children: vec![
+                                Node {
+                                    node_type: NodeType::Regex(Regex::new("^([^/]+)").unwrap()),
+                                    value: Some(1),
+                                    static_children: vec![],
+                                    regex_children: vec![],
+                                    wildcard_children: vec![],
+                                },
+                            ],
+                            wildcard_children: vec![],
+                        },
+                    ],
+                    regex_children: vec![],
+                    wildcard_children: vec![],
+                },
+            ],
+            wildcard_children: vec![],
+        };
+
+        let output = find(&root, "/p/bar/c/foo");
+        assert_eq!(FindResult { value: Some(&1), params: vec!["bar", "foo"] }, output);
+
+        let output = find(&root, "/p/bar/c");
+        assert_eq!(FindResult { value: None, params: vec![] }, output);
     }
 }
