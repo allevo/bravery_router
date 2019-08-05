@@ -12,10 +12,11 @@ mod find;
 mod node;
 mod optimize;
 
-use crate::node::{Node, NodeType};
+use crate::node::NodeType;
 
 pub use crate::add::add;
 pub use crate::find::{find, FindResult};
+pub use crate::node::Node;
 pub use crate::optimize::optimize;
 
 pub fn create_root_node<T: PartialEq>() -> Node<T> {
