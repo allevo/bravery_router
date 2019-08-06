@@ -3,6 +3,17 @@ name = "bravery_router"
 version = "0.1.0"
 authors = ["Tommaso Allevi <tomallevi@gmail.com>"]
 edition = "2018"
+description = "Radix Tree implementation"
+repository = "https://github.com/allevo/bravery_router"
+readme = "./README.md"
+keywords = ["RadixTree", "tree", "radix"]
+categories = ["algorithms", "data-structures"]
+license = "MIT"
+
+[badges]
+gitlab = { repository = "https://github.com/allevo/bravery_router", branch = "master" }
+travis-ci = { repository = "allevo/bravery_router", branch = "master" }
+
 
 [dependencies]
 regex = "1"
