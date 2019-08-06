@@ -43,6 +43,5 @@ impl<'node, T> PartialEq for Node<T> {
             && self.static_children == other.static_children
             && self.regex_children == other.regex_children
             && self.wildcard_children == other.wildcard_children
-            && self.node_type == other.node_type
     }
 }
