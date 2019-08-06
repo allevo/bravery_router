@@ -6,6 +6,8 @@ use bencher::Bencher;
 
 use recognizer::Router;
 
+use std::vec::Vec;
+
 use bravery_router::{add, create_root_node, find, optimize};
 
 fn recognizer(bench: &mut Bencher) {
@@ -20,8 +22,8 @@ fn recognizer(bench: &mut Bencher) {
 
 fn router(bench: &mut Bencher) {
     let comments = "comments";
-    let root = create_root_node();
-    let root = add(root, "/posts/*", comments);
+    let mut root = create_root_node();
+    add(&mut root, "/posts/*", comments);
 
     let optimized = optimize(root);
 
@@ -30,5 +32,20 @@ fn router(bench: &mut Bencher) {
     })
 }
 
-benchmark_group!(benches, recognizer, router);
+fn router_plus_vec(bench: &mut Bencher) {
+    let comments = "comments";
+    let mut root = create_root_node();
+    add(&mut root, "/posts/*", 0);
+    let mut handler = Vec::new();
+    handler.push(comments);
+
+    let optimized = optimize(root);
+
+    bench.iter(|| {
+        let index: &usize = find(&optimized, "/posts/12/comments").value.unwrap();
+        handler.get(*index).unwrap();
+    })
+}
+
+benchmark_group!(benches, recognizer, router, router_plus_vec);
 benchmark_main!(benches);

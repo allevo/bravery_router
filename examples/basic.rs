@@ -1,12 +1,12 @@
 use bravery_router::{add, create_root_node, find, optimize};
 
 fn main() {
-    let root = create_root_node();
+    let mut root = create_root_node();
 
-    let root = add(root, "/foo", 1);
-    let root = add(root, "/foobar", 2);
-    let root = add(root, "/users/:id", 3);
-    let root = add(root, "/all/*", 4);
+    add(&mut root, "/foo", 1);
+    add(&mut root, "/foobar", 2);
+    add(&mut root, "/users/:id", 3);
+    add(&mut root, "/all/*", 4);
 
     let root = optimize(root);
 

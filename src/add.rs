@@ -1,13 +1,13 @@
 use crate::node::{Node, NodeType};
 use regex::Regex;
 
-fn add_inner<'node, T>(mut root: Node<T>, path: &'node [u8], value: T, index: usize) -> Node<T> {
+fn add_inner<'node, T>(root: &mut Node<T>, path: &'node [u8], value: T, index: usize) {
     if index == path.len() {
         if root.value.is_some() {
             panic!("Value already present!")
         }
         root.value = Some(value);
-        return root;
+        return;
     }
 
     if path[index] == b':' {
@@ -28,18 +28,18 @@ fn add_inner<'node, T>(mut root: Node<T>, path: &'node [u8], value: T, index: us
                 };
                 root.regex_children.push(child);
             } else {
-                let child: Node<T> = Node {
+                let mut child: Node<T> = Node {
                     node_type: NodeType::Regex(Regex::new("^([^/]+|$)").unwrap()),
                     value: None,
                     static_children: vec![],
                     regex_children: vec![],
                     wildcard_children: vec![],
                 };
-                let child = add_inner(child, path, value, next_path + index);
+                add_inner(&mut child, path, value, next_path + index);
                 root.regex_children.push(child);
             }
 
-            return root;
+            return;
         } else {
             let mut child: Node<T> = root.regex_children.remove(0);
 
@@ -56,11 +56,11 @@ fn add_inner<'node, T>(mut root: Node<T>, path: &'node [u8], value: T, index: us
             if next_path == path.len() {
                 child.value = Some(value);
             } else {
-                let child = add_inner(child, path, value, next_path + index);
+                add_inner(&mut child, path, value, next_path + index);
                 root.regex_children.push(child);
             }
 
-            return root;
+            return;
         }
     }
     if path[index] == b'*' {
@@ -76,14 +76,14 @@ fn add_inner<'node, T>(mut root: Node<T>, path: &'node [u8], value: T, index: us
         if index != path.len() - 1 {
             unimplemented!("Wildcard should be at the end of the path");
         }
-        return root;
+        return;
     }
 
     let child_pos = root
         .static_children
         .iter()
         .position(|sc| sc.node_type.r#static()[0] == path[index]);
-    let child: Node<T> = match child_pos {
+    let mut child: Node<T> = match child_pos {
         Some(p) => root.static_children.remove(p),
         None => Node {
             node_type: NodeType::Static(vec![path[index]]),
@@ -94,15 +94,14 @@ fn add_inner<'node, T>(mut root: Node<T>, path: &'node [u8], value: T, index: us
         },
     };
 
-    let child = add_inner(child, path, value, index + 1);
+    add_inner(&mut child, path, value, index + 1);
     root.static_children.push(child);
-    root
 }
 
-pub fn add<'node, T>(root: Node<T>, path: &'node str, value: T) -> Node<T> {
+pub fn add<'node, T>(root: &mut Node<T>, path: &'node str, value: T) {
     let path = path.as_bytes();
     let path = if path[0] == b'/' { &path[1..] } else { path };
-    add_inner(root, path, value, 0)
+    add_inner(root, path, value, 0);
 }
 
 #[cfg(test)]
@@ -112,7 +111,7 @@ mod tests {
 
     #[test]
     fn add_one() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: Some(0),
             static_children: vec![],
@@ -120,7 +119,7 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/foo", 1);
+        add(&mut root, "/foo", 1);
 
         assert_eq!(
             root,
@@ -154,7 +153,7 @@ mod tests {
 
     #[test]
     fn add_more_than_one() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: Some(0),
             static_children: vec![],
@@ -162,10 +161,10 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/foo", 1);
-        let root = add(root, "/foobar", 2);
-        let root = add(root, "/fo", 3);
-        let root = add(root, "/bar", 4);
+        add(&mut root, "/foo", 1);
+        add(&mut root, "/foobar", 2);
+        add(&mut root, "/fo", 3);
+        add(&mut root, "/bar", 4);
 
         assert_eq!(
             root,
@@ -238,7 +237,7 @@ mod tests {
 
     #[test]
     fn add_regex_named_on_root() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: Some(0),
             static_children: vec![],
@@ -246,7 +245,7 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/:name", 1);
+        add(&mut root, "/:name", 1);
 
         assert_eq!(
             root,
@@ -268,7 +267,7 @@ mod tests {
 
     #[test]
     fn add_regex_named_neasted() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
@@ -276,7 +275,7 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/foo/:name", 1);
+        add(&mut root, "/foo/:name", 1);
 
         assert_eq!(
             root,
@@ -322,7 +321,7 @@ mod tests {
 
     #[test]
     fn add_regex_named_before_static() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
@@ -330,7 +329,7 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/:name/bar", 1);
+        add(&mut root, "/:name/bar", 1);
 
         assert_eq!(
             root,
@@ -376,7 +375,7 @@ mod tests {
 
     #[test]
     fn add_regex_named_after_static() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
@@ -384,7 +383,7 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/foo/:name", 1);
+        add(&mut root, "/foo/:name", 1);
 
         assert_eq!(
             root,
@@ -430,7 +429,7 @@ mod tests {
 
     #[test]
     fn add_regex_multiple() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
@@ -438,7 +437,7 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/:name/:surname/:age", 1);
+        add(&mut root, "/:name/:surname/:age", 1);
 
         assert_eq!(
             root,
@@ -484,7 +483,7 @@ mod tests {
 
     #[test]
     fn add_wildcard_on_root() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
@@ -492,7 +491,7 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/*", 1);
+        add(&mut root, "/*", 1);
 
         assert_eq!(
             root,
@@ -514,7 +513,7 @@ mod tests {
 
     #[test]
     fn add_wildcard_after_static() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
@@ -522,7 +521,7 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/foo/*", 1);
+        add(&mut root, "/foo/*", 1);
 
         assert_eq!(
             root,
@@ -568,7 +567,7 @@ mod tests {
 
     #[test]
     fn add_wildcard_after_regex() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
@@ -576,7 +575,7 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/:name/*", 1);
+        add(&mut root, "/:name/*", 1);
 
         assert_eq!(
             root,
@@ -611,7 +610,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn add_wildcard_before_something() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
@@ -619,12 +618,12 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        add(root, "/*/:name", 1);
+        add(&mut root, "/*/:name", 1);
     }
 
     #[test]
     fn two_regex() {
-        let root = Node {
+        let mut root = Node {
             node_type: NodeType::Static(vec![b'/']),
             value: None,
             static_children: vec![],
@@ -632,8 +631,8 @@ mod tests {
             wildcard_children: vec![],
         };
 
-        let root = add(root, "/p/:pid/c/", 1);
-        let root = add(root, "/p/:pid/c", 2);
+        add(&mut root, "/p/:pid/c/", 1);
+        add(&mut root, "/p/:pid/c", 2);
 
         assert_eq!(
             root,

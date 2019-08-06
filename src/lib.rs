@@ -79,13 +79,13 @@ mod tests {
 
     #[test]
     fn all() {
-        let root = create_root_node();
+        let mut root = create_root_node();
 
-        let root = add(root, "/foo", 1);
-        let root = add(root, "/bar", 2);
-        let root = add(root, "/foobar", 3);
-        let root = add(root, "/:name/b", 4);
-        let root = add(root, "/aa/bb/cc/dd/*", 5);
+        add(&mut root, "/foo", 1);
+        add(&mut root, "/bar", 2);
+        add(&mut root, "/foobar", 3);
+        add(&mut root, "/:name/b", 4);
+        add(&mut root, "/aa/bb/cc/dd/*", 5);
 
         let optimized = optimize(root);
 
@@ -110,9 +110,13 @@ mod tests {
 
     #[test]
     fn bench_regex() {
-        let root = create_root_node();
-        let root = add(root, "/posts/:post_id/comments/:id", "comments".to_owned());
-        let root = add(root, "/posts/:post_id/comments", "comments".to_owned());
+        let mut root = create_root_node();
+        add(
+            &mut root,
+            "/posts/:post_id/comments/:id",
+            "comments".to_owned(),
+        );
+        add(&mut root, "/posts/:post_id/comments", "comments".to_owned());
 
         println!("{:?}", root);
 
@@ -145,8 +149,8 @@ mod tests {
     #[test]
     fn with_struct() {
         let handler = HandlerFor404 {};
-        let root = create_root_node();
-        let root = add(root, "/posts/:post_id/comments/:id", handler);
+        let mut root = create_root_node();
+        add(&mut root, "/posts/:post_id/comments/:id", handler);
 
         let optimized = optimize(root);
 

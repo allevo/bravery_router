@@ -21,10 +21,10 @@ fn recognizer(bench: &mut Bencher) {
 }
 
 fn router(bench: &mut Bencher) {
-    let root = create_root_node();
-    let root = add(root, "/thomas", "Thomas");
-    let root = add(root, "/tom", "Tom");
-    let root = add(root, "/wycats", "Yehuda");
+    let mut root = create_root_node();
+    add(&mut root, "/thomas", "Thomas");
+    add(&mut root, "/tom", "Tom");
+    add(&mut root, "/wycats", "Yehuda");
 
     let optimized = optimize(root);
 
@@ -33,5 +33,24 @@ fn router(bench: &mut Bencher) {
     })
 }
 
-benchmark_group!(benches, recognizer, router);
+fn router_plus_vec(bench: &mut Bencher) {
+    let mut root = create_root_node();
+    add(&mut root, "/thomas", 0);
+    add(&mut root, "/tom", 1);
+    add(&mut root, "/wycats", 2);
+
+    let mut handler = Vec::new();
+    handler.push("Thomas");
+    handler.push("Tom");
+    handler.push("Yehuda");
+
+    let optimized = optimize(root);
+
+    bench.iter(|| {
+        let index = find(&optimized, "/thomas").value.unwrap();
+        handler.get(*index).unwrap();
+    })
+}
+
+benchmark_group!(benches, recognizer, router, router_plus_vec);
 benchmark_main!(benches);

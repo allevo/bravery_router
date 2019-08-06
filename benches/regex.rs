@@ -20,9 +20,9 @@ fn recognizer(bench: &mut Bencher) {
 }
 
 fn router(bench: &mut Bencher) {
-    let root = create_root_node();
-    let root = add(root, "/posts/:post_id/comments/:id", "comments1");
-    let root = add(root, "/posts/:post_id/comments", "comments2");
+    let mut root = create_root_node();
+    add(&mut root, "/posts/:post_id/comments/:id", "comments1");
+    add(&mut root, "/posts/:post_id/comments", "comments2");
 
     let optimized = optimize(root);
 
@@ -31,5 +31,22 @@ fn router(bench: &mut Bencher) {
     })
 }
 
-benchmark_group!(benches, recognizer, router);
+fn router_plus_vec(bench: &mut Bencher) {
+    let mut root = create_root_node();
+    add(&mut root, "/posts/:post_id/comments/:id", 0);
+    add(&mut root, "/posts/:post_id/comments", 1);
+
+    let mut handler = Vec::new();
+    handler.push("comments1");
+    handler.push("comments2");
+
+    let optimized = optimize(root);
+
+    bench.iter(|| {
+        let index: &usize = find(&optimized, "/posts/12/comments").value.unwrap();
+        handler.get(*index).unwrap();
+    })
+}
+
+benchmark_group!(benches, recognizer, router, router_plus_vec);
 benchmark_main!(benches);
