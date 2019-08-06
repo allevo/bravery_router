@@ -11,9 +11,7 @@ categories = ["algorithms", "data-structures"]
 license = "MIT"
 
 [badges]
-gitlab = { repository = "https://github.com/allevo/bravery_router", branch = "master" }
 travis-ci = { repository = "allevo/bravery_router", branch = "master" }
-
 
 [dependencies]
 regex = "1"
