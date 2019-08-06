@@ -2,6 +2,13 @@ use regex::Regex;
 
 pub const MAX_NEASTING_LEVEL_COUNT: usize = 16;
 
+/// Enum for distinguishing the kind of the node type
+///
+/// Three kind of type are currently implemented:
+/// - Static: represent a node that is identified by a chars sequence
+/// - Regex: represent a node that is identified by a regular expression
+/// - Wildcard: represent tha catch all node
+///
 #[derive(Clone)]
 pub enum NodeType {
     Static(Vec<u8>),
@@ -18,6 +25,10 @@ impl NodeType {
     }
 }
 
+/// Struct for representing a node into the RadixTree.
+///
+/// This struct is used for keeping some informazion about which
+/// kind of type, the value and the children
 pub struct Node<T> {
     pub node_type: NodeType,
     pub value: Option<T>,

@@ -1,5 +1,15 @@
 use crate::node::{Node, NodeType};
 
+/// Optimize the radix tree returning the new optimized instance of Node.
+///
+/// # Examples
+///
+/// ```
+/// use bravery_router::{create_root_node, add, optimize};
+/// let mut node = create_root_node();
+/// add(&mut node, "/foo", 1);
+/// let optmized = optimize(node);
+/// ```
 pub fn optimize<T>(mut root: Node<T>) -> Node<T> {
     match &root.node_type {
         NodeType::Static(p1) => {

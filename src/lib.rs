@@ -1,3 +1,28 @@
+//! Bravery router
+//!
+//! A radix tree implementation in rust without unsafe code
+//!
+//! ```
+//! use bravery_router::{create_root_node, add, optimize, find};
+//!
+//! let mut root = create_root_node();
+//! add(&mut root, "/foo", 1);
+//! add(&mut root, "/users/:userId", 2);
+//! add(&mut root, "/*", 3);
+//!
+//! let root = optimize(root);
+//!
+//! let ret = find(&root, "/foo");
+//! assert_eq!(ret.value, Some(&1));
+//!
+//! let ret = find(&root, "/users/42");
+//! assert_eq!(ret.value, Some(&2));
+//! assert_eq!(ret.params, vec!["42"]);
+//!
+//! let ret = find(&root, "/bar");
+//! assert_eq!(ret.value, Some(&3));
+//! assert_eq!(ret.params, vec!["bar"]);
+//! ```
 extern crate regex;
 
 #[macro_use]
@@ -15,10 +40,20 @@ mod optimize;
 use crate::node::NodeType;
 
 pub use crate::add::add;
+
 pub use crate::find::{find, FindResult};
 pub use crate::node::Node;
+
 pub use crate::optimize::optimize;
 
+/// Create the root node from which all begins.
+///
+/// # Examples
+///
+/// ```
+/// use bravery_router::{create_root_node};
+/// let mut node = create_root_node::<usize>();
+/// ```
 pub fn create_root_node<T>() -> Node<T> {
     Node {
         node_type: NodeType::Static(vec![b'/']),

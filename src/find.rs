@@ -2,6 +2,7 @@ use crate::node::MAX_NEASTING_LEVEL_COUNT;
 pub use crate::node::{Node, NodeType};
 use regex::Regex;
 
+/// Struct for containing the result of the `find` function.
 #[derive(Debug)]
 pub struct FindResult<'req, T: Clone> {
     pub value: Option<&'req T>,
@@ -170,6 +171,22 @@ fn find_inner<'req, T>(
     None
 }
 
+/// Find in the radix tree the path and return a `FindResult`.
+///
+/// There're some precendence:
+/// 1. every Static nodes are compared
+/// 1. then every Regex nodes are compared
+/// 1. then the Wildcard is applied
+///
+/// # Examples
+///
+/// ```
+/// use bravery_router::{create_root_node, add, find};
+/// let mut node = create_root_node();
+/// add(&mut node, "/foo", 1);
+///
+/// let find_result = find(&node, "/foo").value.unwrap();
+/// ```
 pub fn find<'req, T: Clone>(node: &'req Node<T>, path: &'req str) -> FindResult<'req, T> {
     let mut find_state = FindState {
         index: 0,

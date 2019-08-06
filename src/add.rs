@@ -98,6 +98,23 @@ fn add_inner<'node, T>(root: &mut Node<T>, path: &'node [u8], value: T, index: u
     root.static_children.push(child);
 }
 
+/// Insert into `root` the `value` under the `path`.
+///
+/// `path` can be composed by three kind of piece:
+/// - static: sequence of chars
+/// - regex: a named paramenter
+/// - whildcard: the catch all
+///
+/// # Examples
+///
+/// ```
+/// use bravery_router::{create_root_node, add};
+/// let mut node = create_root_node();
+/// add(&mut node, "/foo", 1);
+/// add(&mut node, "/:userId", 2);
+/// add(&mut node, "/*", 3);
+/// ```
+///
 pub fn add<'node, T>(root: &mut Node<T>, path: &'node str, value: T) {
     let path = path.as_bytes();
     let path = if path[0] == b'/' { &path[1..] } else { path };
