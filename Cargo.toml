@@ -16,7 +16,6 @@ travis-ci = { repository = "allevo/bravery_router", branch = "master" }
 [dependencies]
 regex = "1"
 log = "0.4"
-env_logger = "0.6"
 lazy_static = "1"
 
 [dev-dependencies]

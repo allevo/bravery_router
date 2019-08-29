@@ -27,7 +27,6 @@ extern crate regex;
 
 #[macro_use]
 extern crate log;
-extern crate env_logger;
 
 #[macro_use]
 extern crate lazy_static;
@@ -153,11 +152,7 @@ mod tests {
         );
         add(&mut root, "/posts/:post_id/comments", "comments".to_owned());
 
-        println!("{:?}", root);
-
         let optimized = optimize(root);
-
-        println!("{:?}", optimized);
 
         find(&optimized, "/posts/12/comments").value.unwrap();
     }

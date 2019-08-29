@@ -494,8 +494,6 @@ mod tests {
 
         let optimized = optimize(root);
 
-        println!("{:?}", optimized);
-
         assert_eq!(
             optimized,
             Node {
