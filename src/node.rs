@@ -27,8 +27,9 @@ impl NodeType {
 
 /// Struct for representing a node into the RadixTree.
 ///
-/// This struct is used for keeping some informazion about which
+/// This struct is used for keeping some information about which
 /// kind of type, the value and the children
+#[derive(Clone)]
 pub struct Node<T> {
     pub node_type: NodeType,
     pub value: Option<T>,
